@@ -24,8 +24,9 @@ function lock_cmd {
 echo ">>>>>>>>>>>>>> START CUSTOM ENTRYPOINT SCRIPT <<<<<<<<<<<<<<<<< "
 
 # make sure folders are writable
-mkdir -p /var/www/html/var/cache/prod && chown www-data:www-data /var/www/html/var/cache/prod
-mkdir -p /var/www/html/var/cache/dev && chown www-data:www-data /var/www/html/var/cache/dev
+mkdir -p /var/www/html/var/cache/prod && chown -R www-data:www-data /var/www/html/var/cache/prod
+mkdir -p /var/www/html/var/cache/dev && chown -R www-data:www-data /var/www/html/var/cache/dev
+ls -la /var/www/html/var/cache
 
 # set runtime env. vars on the fly
 export APP_ENV=prod

@@ -11,8 +11,9 @@ if [ $IS_MIGRATED -ne 0 ]; then
   echo FIRST DEPLOYMENT, RUNNING AUTOMATED INSTALL
    su www-data -s /bin/sh -c '
     set -e
-    rm -rf var/cache/*
-    mkdir -p public/media/image
+    ls -la /var/www/html/var/cache
+    rm -rf /var/www/html/var/cache/*
+    mkdir -p /var/www/html/public/media/image
     bin/console sylius:install -s plus -n
     cp -fr vendor/sylius/plus/src/Resources/templates/bundles/* templates/bundles
     yarn install
