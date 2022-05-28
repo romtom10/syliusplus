@@ -23,6 +23,10 @@ function lock_cmd {
 
 echo ">>>>>>>>>>>>>> START CUSTOM ENTRYPOINT SCRIPT <<<<<<<<<<<<<<<<< "
 
+# make sure folders are writable
+mkdir -p /var/www/html/var/cache/prod && chown www-data:www-data /var/www/html/var/cache/prod
+mkdir -p /var/www/html/var/cache/dev && chown www-data:www-data /var/www/html/var/cache/dev
+
 # set runtime env. vars on the fly
 export APP_ENV=prod
 export APP_DATABASE_NAME=${ARTIFAKT_MYSQL_DATABASE_NAME:-changeme}
