@@ -16,6 +16,8 @@ if [ $IS_MIGRATED -ne 0 ]; then
     mkdir -p /var/www/html/public/media/image
     bin/console sylius:install -s plus -n
     cp -fr vendor/sylius/plus/src/Resources/templates/bundles/* templates/bundles
+    mkdir -p /var/www/html/templates/bundles/SyliusRefundPlugin
+    mkdir -p /var/www/html/templates/bundles/SyliusUiBundle
     yarn install
     yarn build
     bin/console assets:install --ansi --symlink --relative public
