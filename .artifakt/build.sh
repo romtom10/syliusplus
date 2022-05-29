@@ -24,7 +24,7 @@ apt-get update && \
     apt-get install -y -q --no-install-recommends acl wkhtmltopdf && \
     rm -rf /var/lib/apt/lists/*
 
-composer config repositories.plus composer https://sylius.repo.packagist.com/artifakt-io/
+composer config repositories.plus composer $COMPOSER_REPOSITORY
 composer config --global --auth http-basic.sylius.repo.packagist.com token $COMPOSER_TOKEN
 
 # NO SCRIPTS, it breaks the build

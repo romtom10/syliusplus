@@ -4,3 +4,4 @@
 # they are automatically generated for you 
 export FOO=BAR
 export COMPOSER_TOKEN=__COMPOSER_TOKEN__
+export COMPOSER_REPOSITORY=__COMPOSER_REPOSITORY__
