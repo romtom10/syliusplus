@@ -2,28 +2,44 @@
 
 set -e
 
-IS_MIGRATED=0
-su www-data -s /bin/bash -c 'php ./bin/console doctrine:migrations:status | grep "Already at latest version"' || IS_MIGRATED=$?
+echo ">>>>>>>>>>>>>> START CUSTOM ENTRYPOINT SCRIPT <<<<<<<<<<<<<<<<< "
 
-echo IS_MIGRATED=$IS_MIGRATED
+# make sure folders are writable
+chown -R www-data:www-data /data
+mkdir -p /var/www/html/var/cache/prod && chown -R www-data:www-data /var/www/html/var/cache/prod
+mkdir -p /var/www/html/var/cache/dev && chown -R www-data:www-data /var/www/html/var/cache/dev
+echo DEBUG 
+ls -la /var/www/html/var/cache
 
-if [ $IS_MIGRATED -ne 0 ]; then
-  echo FIRST DEPLOYMENT, RUNNING AUTOMATED INSTALL
-   su www-data -s /bin/sh -c '
-    set -e
-    ls -la /var/www/html/var/cache
-    rm -rf /var/www/html/var/cache/*
-    mkdir -p /var/www/html/public/media/image
-    bin/console sylius:install -s plus -n
-    cp -fr vendor/sylius/plus/src/Resources/templates/bundles/* templates/bundles
-    mkdir -p /var/www/html/templates/bundles/SyliusRefundPlugin
-    mkdir -p /var/www/html/templates/bundles/SyliusUiBundle
-    yarn install
-    yarn build
-    bin/console assets:install --ansi --symlink --relative public
-    bin/console cache:clear
-    bin/console cache:warmup
-  '
-else
-  echo MIGRATIONS DETECTED, SKIPPING AUTOMATED INSTALL
+# set runtime env. vars on the fly
+export APP_ENV=prod
+export APP_DATABASE_NAME=${ARTIFAKT_MYSQL_DATABASE_NAME:-changeme}
+export APP_DATABASE_USER=${ARTIFAKT_MYSQL_USER:-changeme}
+export APP_DATABASE_PASSWORD=${ARTIFAKT_MYSQL_PASSWORD:-changeme}
+export APP_DATABASE_HOST=${ARTIFAKT_MYSQL_HOST:-mysql}
+export APP_DATABASE_PORT=${ARTIFAKT_MYSQL_PORT:-3306}
+
+export DATABASE_URL=mysql://$APP_DATABASE_USER:$APP_DATABASE_PASSWORD@$APP_DATABASE_HOST:$APP_DATABASE_PORT/$APP_DATABASE_NAME
+
+# generate jwt data if not present yet
+su www-data -s /bin/bash -c '
+  set -e
+  if [[ ! -f /data/config/jwt/private.pem ]]; then
+    source /data/passphrase
+    jwt_passphrase=${JWT_PASSPHRASE:-$(grep ''^JWT_PASSPHRASE='' .env | cut -f 2 -d ''='')}
+    echo "$jwt_passphrase" | openssl genpkey -out config/jwt/private.pem -pass stdin -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+    echo "$jwt_passphrase" | openssl pkey -in config/jwt/private.pem -passin stdin -out config/jwt/public.pem -pubout
+    setfacl -R -m u:www-data:rX -m u:"$(whoami)":rwX config/jwt
+    setfacl -dR -m u:www-data:rX -m u:"$(whoami)":rwX config/jwt
+  fi
+'
+
+wait-for $APP_DATABASE_HOST:$APP_DATABASE_PORT --timeout=180
+
+su www-data -s /bin/bash -c 'php ./bin/console doctrine:migrations:status'
+
+if [ $ARTIFAKT_IS_MAIN_INSTANCE == 1 ]; then
+    source /.artifakt/install.sh
 fi
+
+echo ">>>>>>>>>>>>>> END CUSTOM ENTRYPOINT SCRIPT <<<<<<<<<<<<<<<<< "
